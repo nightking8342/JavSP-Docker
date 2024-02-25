@@ -177,25 +177,17 @@ def replace_illegal_chars(name):
 
 # TODO: 删掉这个函数，直接用 pathlib.Path(path).resolve() 获取真实地址来算长度就可以了
 def is_remote_drive(path: str):
-    """判断一个路径是否为远程映射到本地"""
-    #TODO: 当前仅支持Windows平台
-    DRIVE_REMOTE = 0x4
-    drive = os.path.splitdrive(os.path.abspath(path))[0] + os.sep
-    result = ctypes.windll.kernel32.GetDriveTypeW(drive)
-    return result == DRIVE_REMOTE
-
+    """Check if a path is a remote mapping to the local machine."""
+    # For Linux, we can assume that remote paths typically start with '/'
+    return path.startswith('//') or path.startswith('\\\\')  # Checking for network paths
 
 def get_remaining_path_len(path):
-    """计算当前系统支持的最大路径长度与给定路径长度的差值"""
-    #TODO: 支持不同的操作系统
+    """Calculate the difference between the maximum supported path length and the given path length for the current system."""
     fullpath = os.path.abspath(path)
-    # Windows: If the length exceeds ~256 characters, you will be able to see the path/files via Windows/File Explorer, but may not be able to delete/move/rename these paths/files
-    if cfg.NamingRule.calc_path_len_by_byte == 'auto':
-        is_remote = is_remote_drive(path)
-        logger.debug(f"目标路径{['不是', '是'][is_remote]}远程文件系统")
-        cfg.NamingRule.calc_path_len_by_byte = is_remote
-    length = len(fullpath.encode('utf-8')) if cfg.NamingRule.calc_path_len_by_byte else len(fullpath)
-    remaining = cfg.NamingRule.max_path_len - length
+    # Linux: Max path length is typically 4096 characters
+    max_path_len_linux = 4096
+    length = len(fullpath)
+    remaining = max_path_len_linux - length
     return remaining
 
 
